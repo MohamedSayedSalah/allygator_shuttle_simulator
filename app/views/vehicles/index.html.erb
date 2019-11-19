@@ -1,0 +1,243 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+</nav>
+
+<div id="container">
+  <div id="map"></div>
+</div>
+<script type="text/javascript">
+    let vehiclesPath = {};
+    let trackedVehiclesIds = [];
+    let url = '/all_vehicles_locations';
+    const center = {lat: 52.5308, lng: 13.47745};
+    const cityBoundaries = 3500;
+
+
+    /**
+     *   Map options
+     **/
+    let map = new google.maps.Map(document.getElementById('map'), {
+        center: center,
+        zoom: 14,
+        mapTypeId: google.maps.MapTypeId.ROADMAP,
+
+        panControl: true,
+        mapTypeControl: false,
+        panControlOptions: {
+            position: google.maps.ControlPosition.RIGHT_CENTER
+        },
+        zoomControl: true,
+        zoomControlOptions: {
+            style: google.maps.ZoomControlStyle.LARGE,
+            position: google.maps.ControlPosition.RIGHT_CENTER
+        },
+        scaleControl: false,
+        streetViewControl: false,
+        streetViewControlOptions: {
+            position: google.maps.ControlPosition.RIGHT_CENTER
+        }
+    });
+
+    /**
+     *   Red Circle that surround door2door office
+     * */
+    const officeCircle = new google.maps.Circle({
+        strokeColor: '#FF0000',
+        strokeOpacity: 0.8,
+        strokeWeight: 2,
+        fillColor: '#FF0000',
+        fillOpacity: 0.05,
+        map: map,
+        center: center,
+        radius: 3500
+    });
+
+
+    /**
+     *   Check if the new car location is out of boundaries
+     *   @params point => current vehicle location
+     *   return Boolean
+     * */
+    const outOfBoundaries = (point) => {
+        return google.maps.geometry.spherical.computeDistanceBetween
+        (new google.maps.LatLng(point.lat, point.lng), new google.maps.LatLng(center.lat, center.lng)) > cityBoundaries;
+    };
+
+    /**
+     *  make an ajax call if the car is out of boundaries to remove it
+     * */
+    const removeVehicle = (id) => {
+        $.ajax({
+            url: '/vehicles/' + id,
+            method: 'delete',
+            success: () => {
+                registeredCars -= 1;
+            }
+        });
+
+    };
+
+
+    /**
+     *   Closure for Every Vehicle which contains vehicle {path,marker}
+     *
+     * */
+    const carRoute = () => {
+        /** array that contains LatLng objects
+         * */
+        let carPathCoordinates = [];
+        /** array that contains PolyLines objects
+         * */
+        let carPathPolyLines = [];
+
+        /**   car svg
+         * */
+        const car = "M17.402,0H5.643C2.526,0,0,3.467,0,6.584v34.804c0,3.116,2.526,5.644,5.643,5.644h11.759c3.116,0,5.644-2.527,5.644-5.644 V6.584C23.044,3.467,20.518,0,17.402,0z M22.057,14.188v11.665l-2.729,0.351v-4.806L22.057,14.188z M20.625,10.773 c-1.016,3.9-2.219,8.51-2.219,8.51H4.638l-2.222-8.51C2.417,10.773,11.3,7.755,20.625,10.773z M3.748,21.713v4.492l-2.73-0.349 V14.502L3.748,21.713z M1.018,37.938V27.579l2.73,0.343v8.196L1.018,37.938z M2.575,40.882l2.218-3.336h13.771l2.219,3.336H2.575z M19.328,35.805v-7.872l2.729-0.355v10.048L19.328,35.805z";
+        /**  icon options
+         * */
+        const icon = {
+            path: car,
+            scale: .6,
+            strokeColor: '#C70039',
+            strokeWeight: .10,
+            fillOpacity: 1,
+            fillColor: '#404040',
+            offset: '5%',
+            anchor: new google.maps.Point(10, 25)
+        };
+
+        /**   draw car on the map
+         * */
+        let marker = new google.maps.Marker({map: map, icon: icon});
+
+        /**  @params => newlocation [vehicle new location]
+         * */
+        return (newlocation) => {
+
+            /**
+             * check if the new car location is out of boundaries
+             * then remove car marker from map & remove traced line from map
+             * */
+            if (outOfBoundaries(newlocation)) {
+                carPathPolyLines.forEach((poly) => poly.setMap(null));
+                marker.setMap(null);
+                return;
+            }
+            /**
+             * if the car is not out of boundries
+             * store the new location in array to draw it
+             * */
+            carPathCoordinates.push(new google.maps.LatLng(newlocation.lat, newlocation.lng));
+
+            /**
+             *   draw every new location
+             *   and update car location and orientation
+             * */
+            const drawUpdatedLocation = () => {
+                let carPath = new google.maps.Polyline({
+                    path: carPathCoordinates,
+                    geodesic: true,
+                    strokeColor: '#2E4053',
+                    strokeOpacity: 1,
+                    strokeWeight: 2
+                });
+                carPath.setMap(map);
+                carPathPolyLines.push(carPath);
+                marker.setPosition(carPathCoordinates[carPathCoordinates.length - 1]);
+                let end = carPathCoordinates.length > 1 ? carPathCoordinates[carPathCoordinates.length - 1] : carPathCoordinates[0];
+                let start = carPathCoordinates.length > 1 ? carPathCoordinates[carPathCoordinates.length - 2] : carPathCoordinates[0];
+                const heading = google.maps.geometry.spherical.computeHeading(start, end);
+                icon.rotation = heading;
+                marker.setIcon(icon);
+            };
+
+            drawUpdatedLocation();
+        }
+    };
+
+
+    /**
+     * [mark office location ]
+     */
+    function door2doorOffice() {
+        new google.maps.Marker({map: map, position: {lat: 52.5308, lng: 13.47745}});
+    }
+
+    /**
+     * On dom load
+     * Inititalize all data
+     * get vehicles last location every 3 seconds
+     * draw updated locations
+     * remove vehicle from map if its out of boundaries
+     */
+    $(document).on('turbolinks:load', function () {
+
+        door2doorOffice();
+
+        trackedVehiclesIds = <%= raw Vehicle.all.map(&:id) %>
+
+
+            /**
+             * for every vehicle
+             * create Closure which contain all the vehicle data
+             */
+            trackedVehiclesIds.forEach((vehicle) => {
+                const progress = carRoute();
+                vehiclesPath[vehicle] = progress
+            });
+
+
+        /**
+         *  check every 3 seconds each vehicle last location
+         *  then send that location to every vehicle closure to be drawn on maps
+         *  if the vehicle is out of boundaries
+         *  mark closure as undefined after deleting vehicle track from the map
+         */
+        window.setInterval(() => {
+            $.get(url, (data, status) => {
+                trackedVehiclesIds.forEach((vehicle) => {
+                    if (data[vehicle].lat || data[vehicle].lng) {
+                        /**
+                         *  stored closures hash will be accessed by vehicle id
+                         *  like this => vehiclesPath[vehicle_id]( new location)
+                         *  then every vehicle closure will update the car location with the new location
+                         *
+                         */
+                        vehiclesPath[vehicle](data[vehicle]);
+                        if (outOfBoundaries(data[vehicle])) {
+                            vehiclesPath[vehicle] = undefined;
+                            trackedVehiclesIds.splice(trackedVehiclesIds.findIndex((element) => element === vehicle), 1);
+                            removeVehicle(vehicle)
+                        }
+                    }
+                });
+            });
+
+        }, 3000);
+    });
+</script>
+
+
+
+
+<style>
+  html {
+    height: 100%
+  }
+
+  body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  #container {
+    width: 100%;
+    height: 100%
+  }
+
+  #map {
+    width: 100%;
+    height: 100%
+  }
+
+</style>
