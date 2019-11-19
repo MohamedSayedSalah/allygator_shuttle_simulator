@@ -12,12 +12,12 @@ rvm use ruby --install --default
 *install rails "5.2.x""
 gem install rails --no-document
 
-*install mongoDB "4.2.1""
-brew install mongodb
+*install mongoDB "4.2.1"":
+brew install mongodb     
+
+
 Make sure that the /data/db directory has the right permissions by running
-
-
-> sudo chown -R `id -un` /data/db
-> # Enter your password
+sudo chown -R `id -un` /data/db
+# Enter your password
 
 
