@@ -24,8 +24,8 @@ if you have any dificulties installing mongodb
 please follow the instructions below 
 https://treehouse.github.io/installation-guides/mac/mongo-mac.html
 
-you need to add you google_api_key in env file to see every thing properly 
-
+*you need to add you google_api_key in env file to see every thing properly 
+*to run tests type: bundle exec rsepc spec
 sorry for bad formatting 
 
 
