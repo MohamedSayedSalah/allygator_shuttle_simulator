@@ -16,8 +16,12 @@ gem install rails --no-document
 brew install mongodb     
 
 
-Make sure that the /data/db directory has the right permissions by running
+Make sure that the /data/db directory has the right permissions by running:
 sudo chown -R `id -un` /data/db
 # Enter your password
+
+if you have any dificulties installing mongodb 
+please follow the instructions below 
+https://treehouse.github.io/installation-guides/mac/mongo-mac.html
 
 
