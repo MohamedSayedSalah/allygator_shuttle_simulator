@@ -1,23 +1,21 @@
-This README would normally document whatever steps are necessary to get the
-application up and running.
+follow these steps to be abale to run this project in your machine 
 
-Things you may want to cover:
+*install home brew
+ ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 
-* Ruby version
+*install rvm
+\curl -L https://get.rvm.io | bash -s stable 
 
-* System dependencies
+*install ruby "2.6.3"
+rvm use ruby --install --default
 
-* Configuration
+*install rails "5.2.x"
+gem install rails --no-document
 
-* Database creation
+*install mongoDB "4.2.1"
+brew install mongodb
+Make sure that the /data/db directory has the right permissions by running
+> sudo chown -R `id -un` /data/db
+> # Enter your password
 
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
 
