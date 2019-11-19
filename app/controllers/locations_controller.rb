@@ -9,7 +9,7 @@ class LocationsController < ApplicationController
   def all_vehicles_locations
     @vehicles_last_location = {}
     @locations = Vehicle.all.map { |vehicle| @vehicles_last_location[vehicle.id] = vehicle.locations.last ?
-                                                                                       {lat: vehicle.locations.last.lat , lng: vehicle.locations.last.lng } : {} }
+                                                                                       {lat: vehicle.locations.last.lat, lng: vehicle.locations.last.lng} : {} }
     render json: @vehicles_last_location
   end
 
@@ -20,12 +20,19 @@ class LocationsController < ApplicationController
                                        at: params[:location][:at])
     @vehicle.save!
   end
+
+
+  def reset
+    Vehicle.all.map{|vehicle| vehicle.locations.destroy_all}
+    Vehicle.destroy_all
+  end
+
   private
-  
+
   def set_vehicle
     @vehicle = Vehicle.find(params[:id])
   end
-  
+
   def location_params
     params.require(:location).permit(:lat, :lng, :at)
   end

@@ -1,12 +1,13 @@
 class VehiclesController < ApplicationController
-  before_action :set_vehicle, only: [ :destroy]
-  before_action :vehicle_params, only: [:create]
+  before_action :set_vehicle, only: [:destroy]
   protect_from_forgery with: :null_session
 
   # GET /vehicles
   def index
     @vehicles = Vehicle.all.pluck(:id)
   end
+
+
 
   # POST /vehicles
   def create
@@ -24,9 +25,6 @@ class VehiclesController < ApplicationController
   def set_vehicle
     @vehicle = Vehicle.find(params[:id])
   end
-  
-  def vehicle_params
-    params.require(:vehicle).permit(:id)
-  end
+
 
 end
