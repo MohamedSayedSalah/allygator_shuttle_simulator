@@ -6,6 +6,7 @@ class LocationsController < ApplicationController
   protect_from_forgery with: :null_session
 
   # display all vehicles last locations
+  # it runs much faster using mongoDB compared to relational database
   def all_vehicles_locations
     @vehicles_last_location = {}
     @locations = Vehicle.all.map { |vehicle| @vehicles_last_location[vehicle.id] = vehicle.locations.last ?
